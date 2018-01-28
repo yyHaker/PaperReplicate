@@ -15,7 +15,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 # 设置全局cudnn不可用
-torch.backends.cudnn.enable = False
+torch.backends.cudnn.enabled = False
 
 parser = argparse.ArgumentParser()
 # 参数配置文件路径， 必须输入该参数
@@ -26,8 +26,8 @@ args = parser.parse_args()
 config_file_path = args.config
 config = read_config(config_file_path)
 experiment_name = hyperparam_string(config)
-save_dir = config['data']['save_dir']
-load_dir = config['data']['load_dir']
+save_dir = config['data']['save_dir']  # 模型保存路径
+load_dir = config['data']['load_dir']  # 模型保存路径
 
 # 创建log file
 log_file_name = 'log/%s' % experiment_name
@@ -54,6 +54,7 @@ logging.getLogger('').addHandler(console)
 
 print("Reading data.....")
 
+# cost a lot memory
 src, trg = read_nmt_data(
     src=config['data']['src'],
     config=config,
@@ -68,7 +69,8 @@ src_test, trg_test = read_nmt_data(
 
 use_cuda = config['model']['use_cuda']
 batch_size = config['data']['batch_size']
-max_length = config['data']['max_src_length']  # 源句子最大长度
+max_src_length = config['data']['max_src_length']  # 源句子最大长度
+max_trg_length = config['data']['max_trg_length']  # 目标句子最大长度
 src_vocab_size = len(src['word2id'])
 trg_vocab_size = len(trg['word2id'])
 
@@ -107,7 +109,7 @@ if config['model']['seq2seq'] == 'vanilla':
         trg_emb_dim=config['model']['dim_word_trg'],
         src_vocab_size=src_vocab_size,
         trg_vocab_size=trg_vocab_size,
-        src_hidden_dim=config['model']['dim'],
+        src_hidden_dim=config['model']['dim_src'],
         trg_hidden_dim=config['model']['dim_trg'],
         pad_token_src=src['word2id']['<pad>'],
         pad_token_trg=trg['word2id']['<pad>'],
@@ -120,6 +122,126 @@ if config['model']['seq2seq'] == 'vanilla':
     )
     if use_cuda:
         model = model.cuda()
+
+if load_dir:
+    model.load_state_dict(torch.load(open(load_dir)))
+
+# __TODO__ Make this more flexible for other learning methods.
+if config['training']['optimizer'] == 'adam':
+    lr = config['training']['lrate']
+    optimizer = optim.Adam(model.parameters(), lr=lr)
+elif config['training']['optimizer'] == 'adadelta':
+    optimizer = optim.Adadelta(model.parameters())
+elif config['training']['optimizer'] == 'sgd':
+    lr = config['training']['lrate']
+    optimizer = optim.SGD(model.parameters(), lr=lr)
+else:
+    raise NotImplementedError("Learning method not recommend for task")
+
+# training.....
+for i in range(1000):
+    losses = []
+    for j in range(0, len(src['data']), batch_size):
+        # get batch data
+        input_lines_src, _, lens_src, mask_src = get_minibatch(
+            src['data'], src['word2id'], j,
+            batch_size, max_src_length, add_start=True, add_end=True,
+            use_cuda=True
+        )
+        input_lines_trg, output_lines_trg, lens_trg, mask_trg = get_minibatch(
+            trg['data'], trg['word2id'], j,
+            batch_size, max_trg_length, add_start=True, add_end=True,
+            use_cuda=True
+        )
+
+        decoder_logit = model(input_lines_src, input_lines_trg)
+        optimizer.zero_grad()
+
+        # loss(x, class) = weights[class] * (-x[class] + log(\sum_j exp(x[j])))
+        loss = loss_criterion(
+            decoder_logit.contiguous().view(-1, trg_vocab_size),
+            output_lines_trg.view(-1)
+        )
+        losses.append(loss.data[0])
+        loss.backward()
+        optimizer.step()
+
+        # every 'monitor_loss' step to monitor
+        if j % config['management']['monitor_loss'] == 0:
+            logging.info('Epoch : %d Minibatch : %d Loss : %.5f' % (
+                i, j, np.mean(losses)))
+            losses = []
+
+        if (config['management']['print_samples'] and
+                        j % config['management']['print_samples'] == 0):
+            word_probs = model.decode(
+                decoder_logit
+            ).data.cpu().numpy().argmax(axis=-1)
+
+            output_lines_trg = output_lines_trg.data.cpu().numpy()
+
+            # sample several sentence
+            for sentence_pred, sentence_real in zip(
+                word_probs[:5], output_lines_trg[:5]
+            ):
+                sentence_pred = [trg['id2word'][x] for x in sentence_pred]
+                sentence_real = [trg['id2word'][x] for x in sentence_real]
+
+                if '</s>' in sentence_real:
+                    index = sentence_real.index('</s>')
+                    sentence_real = sentence_real[:index]
+                    sentence_pred = sentence_pred[:index]
+
+                logging.info('Predicted : %s ' % (' '.join(sentence_pred)))
+                logging.info('-----------------------------------------------')
+                logging.info('Real : %s ' % (' '.join(sentence_real)))
+                logging.info('===============================================')
+
+            if j % config['management']['checkpoint_freq'] == 0:
+                logging.info('Evaluating model ...')
+                bleu = evaluate_model(
+                    model, src, src_test, trg,
+                    trg_test, config, verbose=False,
+                    metric='bleu',
+                    use_cuda=use_cuda
+                )
+
+                logging.info('Epoch : %d Minibatch : %d : BLEU : %.5f ' % (i, j, bleu))
+
+                logging.info('Saving model ...')
+
+                torch.save(
+                    model.state_dict(),
+                    open(os.path.join(
+                        save_dir,
+                        experiment_name + '__epoch_%d__minibatch_%d' % (i, j) + '.model'), 'wb'
+                    )
+                )
+        # every epoch calculate bleu
+        bleu = evaluate_model(
+            model, src, src_test, trg,
+            trg_test, config, verbose=False,
+            metric='bleu',
+            use_cuda=use_cuda
+        )
+
+        logging.info('Epoch : %d : BLEU : %.5f ' % (i, bleu))
+
+        torch.save(
+            model.state_dict(),
+            open(os.path.join(
+                save_dir,
+                experiment_name + '__epoch_%d' % (i) + '.model'), 'wb'
+            )
+        )
+
+
+
+
+
+
+
+
 
 
 

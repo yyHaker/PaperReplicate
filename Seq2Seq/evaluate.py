@@ -76,23 +76,24 @@ def decode_minibatch(
     model,
     input_lines_src,
     input_lines_trg,
-    output_lines_trg_gold
+    output_lines_trg_gold,
+    use_cuda=False
 ):
     """Decode a minibatch."""
-    for i in xrange(config['data']['max_trg_length']):
+    for i in range(config['data']['max_trg_length']):
 
         decoder_logit = model(input_lines_src, input_lines_trg)
         word_probs = model.decode(decoder_logit)
         decoder_argmax = word_probs.data.cpu().numpy().argmax(axis=-1)
         next_preds = Variable(
             torch.from_numpy(decoder_argmax[:, -1])
-        ).cuda()
+        )
+        if use_cuda:
+            next_preds = next_preds.cuda()
 
         input_lines_trg = torch.cat(
             (input_lines_trg, next_preds.unsqueeze(1)),
-            1
         )
-
     return input_lines_trg
 
 
@@ -140,27 +141,25 @@ def model_perplexity(
 def evaluate_model(
     model, src, src_test, trg,
     trg_test, config, src_valid=None, trg_valid=None,
-    verbose=True, metric='bleu'
+    verbose=True, metric='bleu', use_cuda=False
 ):
     """Evaluate model."""
     preds = []
     ground_truths = []
     for j in range(0, len(src_test['data']), config['data']['batch_size']):
-
         # Get source minibatch
         input_lines_src, output_lines_src, lens_src, mask_src = get_minibatch(
             src_test['data'], src['word2id'], j, config['data']['batch_size'],
-            config['data']['max_src_length'], add_start=True, add_end=True
-        )
+            config['data']['max_src_length'], add_start=True, add_end=True,
+            use_cuda=use_cuda)
 
         # Get target minibatch
         input_lines_trg_gold, output_lines_trg_gold, lens_src, mask_src = (
             get_minibatch(
                 trg_test['data'], trg['word2id'], j,
                 config['data']['batch_size'], config['data']['max_trg_length'],
-                add_start=True, add_end=True
-            )
-        )
+                add_start=True, add_end=True, use_cuda=use_cuda
+            ))
 
         # Initialize target with <s> for every sentence
         input_lines_trg = Variable(torch.LongTensor(
@@ -168,12 +167,15 @@ def evaluate_model(
                 [trg['word2id']['<s>']]
                 for i in range(input_lines_src.size(0))
             ]
-        )).cuda()
+        ))
+        if use_cuda:
+            input_lines_trg = input_lines_trg.cuda()
 
         # Decode a minibatch greedily __TODO__ add beam search decoding
         input_lines_trg = decode_minibatch(
             config, model, input_lines_src,
-            input_lines_trg, output_lines_trg_gold
+            input_lines_trg, output_lines_trg_gold,
+            use_cuda=use_cuda
         )
 
         # Copy minibatch outputs to cpu and convert ids to words

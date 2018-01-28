@@ -12,7 +12,7 @@ def hyperparam_string(config):
     exp_name += 'src_%s__' % (config['model']['src_lang'])
     exp_name += 'trg_%s__' % (config['model']['trg_lang'])
     exp_name += 'attention_%s__' % (config['model']['seq2seq'])
-    exp_name += 'dim_%s__' % (config['model']['dim'])
+    exp_name += 'dim_%s__' % (config['model']['dim_src'])
     exp_name += 'emb_dim_%s__' % (config['model']['dim_word_src'])
     exp_name += 'optimizer_%s__' % (config['training']['optimizer'])
     exp_name += 'n_layers_src_%d__' % (config['model']['n_layers_src'])
@@ -118,7 +118,7 @@ def read_nmt_data(src, config, trg=None):
     )
 
     src = {'data': src_lines, 'word2id': src_word2id, 'id2word': src_id2word}
-    del src_lines  # save memory
+    del src_lines, src_word2id, src_id2word  # save memory
 
     if trg is not None:
         print('Reading target data ...')
@@ -133,7 +133,7 @@ def read_nmt_data(src, config, trg=None):
         )
 
         trg = {'data': trg_lines, 'word2id': trg_word2id, 'id2word': trg_id2word}
-        del trg_lines  # save memory
+        del trg_lines, trg_word2id, trg_id2word  # save memory
     else:
         trg = None
 
@@ -151,11 +151,23 @@ def read_summarization_data(src, trg):
     return src, trg
 
 
-def get_minibatch(
-    lines, word2ind, index, batch_size,
-    max_len, add_start=True, add_end=True
-):
-    """Prepare minibatch."""
+def get_minibatch(lines, word2ind, index, batch_size,
+    max_len, add_start=True, add_end=True, use_cuda=False):
+    """
+    Prepare minibatch.
+    :param lines: a list of lists
+    :param word2ind: a dictionary maps word to index
+    :param index: the current index
+    :param batch_size:
+    :param max_len:
+    :param add_start: bool,
+    :param add_end: bool,
+    :return:
+         'input_lines':    输入的句子
+         'output_lines': 输出的句子
+         'lens': 每个句子的长度列表
+         'mask': ???
+    """
     if add_start and add_end:
         lines = [
             ['<s>'] + line + ['</s>']
@@ -176,6 +188,7 @@ def get_minibatch(
             line
             for line in lines[index:index + batch_size]
         ]
+
     lines = [line[:max_len] for line in lines]
 
     lens = [len(line) for line in lines]
@@ -193,15 +206,19 @@ def get_minibatch(
         for line in lines
     ]
 
+    # mask怎么理解？为什么总长度是max_len - 1?
     mask = [
         ([1] * (l - 1)) + ([0] * (max_len - l))
         for l in lens
     ]
 
-    input_lines = Variable(torch.LongTensor(input_lines)).cuda()
-    output_lines = Variable(torch.LongTensor(output_lines)).cuda()
-    mask = Variable(torch.FloatTensor(mask)).cuda()
-
+    input_lines = Variable(torch.LongTensor(input_lines))
+    output_lines = Variable(torch.LongTensor(output_lines))
+    mask = Variable(torch.FloatTensor(mask))
+    if use_cuda:
+        input_lines = input_lines.cuda()
+        output_lines = output_lines.cuda()
+        mask = mask.cuda()
     return input_lines, output_lines, lens, mask
 
 
