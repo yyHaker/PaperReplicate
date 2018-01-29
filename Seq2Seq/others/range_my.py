@@ -16,3 +16,11 @@ mask = [
         for l in lens
     ]
 print(mask)
+
+#  filter
+def is_odd(x):
+    return x % 2 == 1
+print(list(filter(is_odd, [1, 4, 6, 7, 9, 12, 17])))
+
+
+

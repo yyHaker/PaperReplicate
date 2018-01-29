@@ -33,6 +33,7 @@ load_dir = config['data']['load_dir']  # 模型保存路径
 log_file_name = 'log/%s' % experiment_name
 with open(log_file_name, 'w') as f:
     pass
+os.makedirs(save_dir)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -139,6 +140,7 @@ else:
     raise NotImplementedError("Learning method not recommend for task")
 
 # training.....
+logging.info("training.......")
 for i in range(1000):
     losses = []
     for j in range(0, len(src['data']), batch_size):

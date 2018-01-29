@@ -41,6 +41,6 @@
     "decode": "greedy",
     "seq2seq": "vanilla",
     "optimizer": "adam",
-    "use_cuda": false
+    "use_cuda": true
   }
 }

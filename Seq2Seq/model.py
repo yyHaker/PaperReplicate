@@ -210,5 +210,7 @@ class Seq2Seq(nn.Module):
         )
         return word_probs
 
+# TODO: check the method of blue score calculating
+
 
 
