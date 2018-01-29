@@ -79,11 +79,20 @@ def decode_minibatch(
     output_lines_trg_gold,
     use_cuda=False
 ):
-    """Decode a minibatch."""
+    """Decode a minibatch greedily.
+    批量的decode every word in a sentence.
+    :param config:
+    :param model:
+    :param input_lines_src: 从encoder输入的句子，[batch, seq]
+    :param input_lines_trg: Variable, decoder 输入的部分，[batch, 1]
+    :param output_lines_trg_gold:
+    :param use_cuda: if use cuda
+    :return:
+            "input_lines_trg": [batch, max_trg_length]
+    """
     for i in range(config['data']['max_trg_length']):
-
         decoder_logit = model(input_lines_src, input_lines_trg)
-        word_probs = model.decode(decoder_logit)
+        word_probs = model.decode(decoder_logit)  # [batch, trg_seq_len, trg_vocab_size]
         decoder_argmax = word_probs.data.cpu().numpy().argmax(axis=-1)
         next_preds = Variable(
             torch.from_numpy(decoder_argmax[:, -1])
@@ -91,9 +100,7 @@ def decode_minibatch(
         if use_cuda:
             next_preds = next_preds.cuda()
 
-        input_lines_trg = torch.cat(
-            (input_lines_trg, next_preds.unsqueeze(1)),
-        )
+        input_lines_trg = torch.cat((input_lines_trg, next_preds.unsqueeze(1)), 1)
     return input_lines_trg
 
 
@@ -171,6 +178,8 @@ def evaluate_model(
         if use_cuda:
             input_lines_trg = input_lines_trg.cuda()
 
+        # print("input_lines_src: ", input_lines_src.size(), "input_lines_trg: ", input_lines_trg.size())
+        # input_lines_src: [80, 49],   "input_lines_trg: " [80, 1]
         # Decode a minibatch greedily __TODO__ add beam search decoding
         input_lines_trg = decode_minibatch(
             config, model, input_lines_src,
@@ -198,6 +207,7 @@ def evaluate_model(
             output_lines_trg_gold,
             output_lines_src
         ):
+            # 构造完整的句子 <s> + sentence + </s>
             if '</s>' in sentence_pred:
                 index = sentence_pred.index('</s>')
             else:
@@ -216,7 +226,7 @@ def evaluate_model(
             if verbose:
                 print('--------------------------------------')
             ground_truths.append(['<s>'] + sentence_real[:index + 1])
-
+    print("clculate blue value.....")
     return get_bleu(preds, ground_truths)
 
 

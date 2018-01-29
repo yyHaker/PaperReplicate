@@ -9,3 +9,4 @@ This project is the replication of paper 《Sequence to Sequence Learning with N
 - nmt.py                   main script ro run things
 - data_utils.py          data operate file
 - evaluate.py             evaluate models
+

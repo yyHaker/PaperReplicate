@@ -146,12 +146,12 @@ for i in range(1000):
         input_lines_src, _, lens_src, mask_src = get_minibatch(
             src['data'], src['word2id'], j,
             batch_size, max_src_length, add_start=True, add_end=True,
-            use_cuda=True
+            use_cuda=use_cuda
         )
         input_lines_trg, output_lines_trg, lens_trg, mask_trg = get_minibatch(
             trg['data'], trg['word2id'], j,
             batch_size, max_trg_length, add_start=True, add_end=True,
-            use_cuda=True
+            use_cuda=use_cuda
         )
 
         decoder_logit = model(input_lines_src, input_lines_trg)
@@ -177,10 +177,10 @@ for i in range(1000):
             word_probs = model.decode(
                 decoder_logit
             ).data.cpu().numpy().argmax(axis=-1)
-
+            # decoder_logit: [batch*trg_seq_len, trg_vocab_size]
             output_lines_trg = output_lines_trg.data.cpu().numpy()
 
-            # sample several sentence
+            logging.info("sampling several sentences...........")
             for sentence_pred, sentence_real in zip(
                 word_probs[:5], output_lines_trg[:5]
             ):
@@ -197,43 +197,45 @@ for i in range(1000):
                 logging.info('Real : %s ' % (' '.join(sentence_real)))
                 logging.info('===============================================')
 
-            if j % config['management']['checkpoint_freq'] == 0:
-                logging.info('Evaluating model ...')
-                bleu = evaluate_model(
-                    model, src, src_test, trg,
-                    trg_test, config, verbose=False,
-                    metric='bleu',
-                    use_cuda=use_cuda
-                )
-
-                logging.info('Epoch : %d Minibatch : %d : BLEU : %.5f ' % (i, j, bleu))
-
-                logging.info('Saving model ...')
-
-                torch.save(
-                    model.state_dict(),
-                    open(os.path.join(
-                        save_dir,
-                        experiment_name + '__epoch_%d__minibatch_%d' % (i, j) + '.model'), 'wb'
-                    )
-                )
-        # every epoch calculate bleu
-        bleu = evaluate_model(
-            model, src, src_test, trg,
-            trg_test, config, verbose=False,
-            metric='bleu',
-            use_cuda=use_cuda
-        )
-
-        logging.info('Epoch : %d : BLEU : %.5f ' % (i, bleu))
-
-        torch.save(
-            model.state_dict(),
-            open(os.path.join(
-                save_dir,
-                experiment_name + '__epoch_%d' % (i) + '.model'), 'wb'
+        if j % config['management']['checkpoint_freq'] == 0:
+            logging.info('Evaluating model ...')
+            bleu = evaluate_model(
+                model, src, src_test, trg,
+                trg_test, config, verbose=False,
+                metric='bleu',
+                use_cuda=use_cuda
             )
+
+            logging.info('Epoch : %d Minibatch : %d : BLEU : %.5f ' % (i, j, bleu))
+
+            logging.info('Saving model ...')
+
+            torch.save(
+                model.state_dict(),
+                open(os.path.join(
+                    save_dir,
+                    experiment_name + '__epoch_%d__minibatch_%d' % (i, j) + '.model'), 'wb'
+                )
+            )
+
+    # every epoch calculate bleu(cost a lot of time)
+    logging.info("every epoch calculate bleu......")
+    bleu = evaluate_model(
+        model, src, src_test, trg,
+        trg_test, config, verbose=False,
+        metric='bleu',
+        use_cuda=use_cuda
+    )
+
+    logging.info('Epoch : %d : BLEU : %.5f ' % (i, bleu))
+
+    torch.save(
+        model.state_dict(),
+        open(os.path.join(
+            save_dir,
+            experiment_name + '__epoch_%d' % (i) + '.model'), 'wb'
         )
+    )
 
 
 

@@ -168,6 +168,7 @@ def get_minibatch(lines, word2ind, index, batch_size,
          'lens': 每个句子的长度列表
          'mask': ???
     """
+    # 是否添加开始和结尾标记
     if add_start and add_end:
         lines = [
             ['<s>'] + line + ['</s>']
@@ -194,12 +195,14 @@ def get_minibatch(lines, word2ind, index, batch_size,
     lens = [len(line) for line in lines]
     max_len = max(lens)
 
+    # 去除</s>
     input_lines = [
         [word2ind[w] if w in word2ind else word2ind['<unk>'] for w in line[:-1]] +
         [word2ind['<pad>']] * (max_len - len(line))
         for line in lines
     ]
 
+    # 去除<s>
     output_lines = [
         [word2ind[w] if w in word2ind else word2ind['<unk>'] for w in line[1:]] +
         [word2ind['<pad>']] * (max_len - len(line))
