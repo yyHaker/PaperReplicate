@@ -1,0 +1,99 @@
+2018-01-30 16:26:52,592 - INFO - Model Parameters : 
+2018-01-30 16:26:52,593 - INFO - Task : translation 
+2018-01-30 16:26:52,593 - INFO - Model : vanilla 
+2018-01-30 16:26:52,593 - INFO - Source Language : fr 
+2018-01-30 16:26:52,593 - INFO - Target Language : en 
+2018-01-30 16:26:52,593 - INFO - Source Word Embedding Dim  : 500
+2018-01-30 16:26:52,593 - INFO - Target Word Embedding Dim  : 500
+2018-01-30 16:26:52,593 - INFO - Source RNN Hidden Dim  : 1000
+2018-01-30 16:26:52,593 - INFO - Target RNN Hidden Dim  : 1000
+2018-01-30 16:26:52,593 - INFO - Source RNN Depth : 2 
+2018-01-30 16:26:52,594 - INFO - Target RNN Depth : 1 
+2018-01-30 16:26:52,594 - INFO - Source RNN Bidirectional  : True
+2018-01-30 16:26:52,594 - INFO - Batch Size : 64 
+2018-01-30 16:26:52,594 - INFO - Optimizer : adam 
+2018-01-30 16:26:52,594 - INFO - Learning Rate : 0.000100 
+2018-01-30 16:26:52,594 - INFO - Use cuda: False
+2018-01-30 16:26:52,594 - INFO - Found 1768 words in src 
+2018-01-30 16:26:52,594 - INFO - Found 1569 words in trg 
+2018-01-30 16:26:52,870 - INFO - training.......
+2018-01-30 16:27:08,450 - INFO - Epoch : 0 Minibatch : 0 Loss : 7.35766
+2018-01-30 16:27:08,558 - INFO - sampling several sentences...........
+2018-01-30 16:27:08,558 - INFO - Predicted : seen, time. accept speak 
+2018-01-30 16:27:08,558 - INFO - -----------------------------------------------
+2018-01-30 16:27:08,559 - INFO - Real : Resumption of the session 
+2018-01-30 16:27:08,559 - INFO - ===============================================
+2018-01-30 16:27:08,559 - INFO - Predicted : seen, time. time. drivers speak speak speak speak speak session initiative speak clearly clearly 95/35/EC, 95/35/EC, 95/35/EC, initiative nonetheless initiative initiative initiative initiative initiative initiative initiative initiative However, time. time. time. speak vast answered initiative initiative session speak 
+2018-01-30 16:27:08,559 - INFO - -----------------------------------------------
+2018-01-30 16:27:08,559 - INFO - Real : I declare resumed the session of the European Parliament adjourned on Friday 17 December 1999, and I would like once again to wish you a happy new year in the hope that you enjoyed a pleasant festive period. 
+2018-01-30 16:27:08,559 - INFO - ===============================================
+2018-01-30 16:27:08,559 - INFO - Predicted : seen, time. nonetheless initiative time. time. time. speak into speak time. session session time. initiative speak speak (The initiative initiative accept well well initiative vast 95/35/EC, nonetheless nonetheless answered answered session 
+2018-01-30 16:27:08,560 - INFO - -----------------------------------------------
+2018-01-30 16:27:08,560 - INFO - Real : Although, as you will have seen, the dreaded 'millennium bug' failed to materialise, still the people in a number of countries suffered a series of natural disasters that truly were dreadful. 
+2018-01-30 16:27:08,560 - INFO - ===============================================
+2018-01-30 16:27:08,560 - INFO - Predicted : seen, time. time. time. initiative time. clearly nonetheless nonetheless 95/35/EC, speak 95/35/EC, 95/35/EC, speak into coup 95/35/EC, into well 
+2018-01-30 16:27:08,560 - INFO - -----------------------------------------------
+2018-01-30 16:27:08,560 - INFO - Real : You have requested a debate on this subject in the course of the next few days, during this part-session. 
+2018-01-30 16:27:08,560 - INFO - ===============================================
+2018-01-30 16:27:08,560 - INFO - Predicted : seen, time. time. speak initiative initiative initiative Or into initiative initiative stability. clearly nonetheless initiative initiative 95/35/EC, initiative initiative initiative speak speak speak speak speak speak speak speak time. 95/35/EC, speak shipment. initiative Or speak initiative initiative well speak time. 
+2018-01-30 16:27:08,561 - INFO - -----------------------------------------------
+2018-01-30 16:27:08,561 - INFO - Real : In the meantime, I should like to observe a minute' s silence, as a number of Members have requested, on behalf of all the victims concerned, particularly those of the terrible storms, in the various countries of the European Union. 
+2018-01-30 16:27:08,561 - INFO - ===============================================
+2018-01-30 16:27:08,561 - INFO - Evaluating model ...
+2018-01-30 16:33:10,884 - INFO - Epoch : 0 Minibatch : 0 : BLEU : 0.00000 
+2018-01-30 16:33:10,885 - INFO - Saving model ...
+2018-01-30 16:33:37,385 - INFO - every epoch calculate bleu......
+2018-01-30 16:39:47,259 - INFO - Epoch : 0 : BLEU : 0.00000 
+2018-01-30 16:40:03,582 - INFO - Epoch : 1 Minibatch : 0 Loss : 7.34940
+2018-01-30 16:40:03,690 - INFO - sampling several sentences...........
+2018-01-30 16:40:03,690 - INFO - Predicted : I I I I 
+2018-01-30 16:40:03,690 - INFO - -----------------------------------------------
+2018-01-30 16:40:03,691 - INFO - Real : Resumption of the session 
+2018-01-30 16:40:03,691 - INFO - ===============================================
+2018-01-30 16:40:03,691 - INFO - Predicted : I I I I speak I the speak the the I the the the 95/35/EC, the I I the I the initiative initiative initiative initiative initiative the I I I I the I I initiative initiative I the 
+2018-01-30 16:40:03,691 - INFO - -----------------------------------------------
+2018-01-30 16:40:03,691 - INFO - Real : I declare resumed the session of the European Parliament adjourned on Friday 17 December 1999, and I would like once again to wish you a happy new year in the hope that you enjoyed a pleasant festive period. 
+2018-01-30 16:40:03,691 - INFO - ===============================================
+2018-01-30 16:40:03,691 - INFO - Predicted : I I I initiative time. time. initiative speak into into into session session the the speak the the initiative initiative the the I I the the the I answered answered session 
+2018-01-30 16:40:03,691 - INFO - -----------------------------------------------
+2018-01-30 16:40:03,692 - INFO - Real : Although, as you will have seen, the dreaded 'millennium bug' failed to materialise, still the people in a number of countries suffered a series of natural disasters that truly were dreadful. 
+2018-01-30 16:40:03,692 - INFO - ===============================================
+2018-01-30 16:40:03,692 - INFO - Predicted : I I I I I the the I I I I 95/35/EC, the speak into the the the I 
+2018-01-30 16:40:03,692 - INFO - -----------------------------------------------
+2018-01-30 16:40:03,692 - INFO - Real : You have requested a debate on this subject in the course of the next few days, during this part-session. 
+2018-01-30 16:40:03,692 - INFO - ===============================================
+2018-01-30 16:40:03,692 - INFO - Predicted : I I I I the the the the into initiative the the and initiative initiative initiative the the the initiative and and the the speak the speak I I the speak I initiative I I the I the the the 
+2018-01-30 16:40:03,692 - INFO - -----------------------------------------------
+2018-01-30 16:40:03,692 - INFO - Real : In the meantime, I should like to observe a minute' s silence, as a number of Members have requested, on behalf of all the victims concerned, particularly those of the terrible storms, in the various countries of the European Union. 
+2018-01-30 16:40:03,693 - INFO - ===============================================
+2018-01-30 16:40:03,693 - INFO - Evaluating model ...
+2018-01-30 16:46:19,146 - INFO - Epoch : 1 Minibatch : 0 : BLEU : 0.00000 
+2018-01-30 16:46:19,147 - INFO - Saving model ...
+2018-01-30 16:46:46,100 - INFO - every epoch calculate bleu......
+2018-01-30 16:53:08,886 - INFO - Epoch : 1 : BLEU : 0.00000 
+2018-01-30 16:53:25,532 - INFO - Epoch : 2 Minibatch : 0 Loss : 7.34119
+2018-01-30 16:53:25,641 - INFO - sampling several sentences...........
+2018-01-30 16:53:25,641 - INFO - Predicted : I I the the 
+2018-01-30 16:53:25,642 - INFO - -----------------------------------------------
+2018-01-30 16:53:25,642 - INFO - Real : Resumption of the session 
+2018-01-30 16:53:25,642 - INFO - ===============================================
+2018-01-30 16:53:25,642 - INFO - Predicted : I I I the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the </s> the 
+2018-01-30 16:53:25,642 - INFO - -----------------------------------------------
+2018-01-30 16:53:25,642 - INFO - Real : I declare resumed the session of the European Parliament adjourned on Friday 17 December 1999, and I would like once again to wish you a happy new year in the hope that you enjoyed a pleasant festive period. 
+2018-01-30 16:53:25,642 - INFO - ===============================================
+2018-01-30 16:53:25,642 - INFO - Predicted : I I I the the the the the the the the the the the the the the the the the the the the the the the the the the the the 
+2018-01-30 16:53:25,643 - INFO - -----------------------------------------------
+2018-01-30 16:53:25,643 - INFO - Real : Although, as you will have seen, the dreaded 'millennium bug' failed to materialise, still the people in a number of countries suffered a series of natural disasters that truly were dreadful. 
+2018-01-30 16:53:25,643 - INFO - ===============================================
+2018-01-30 16:53:25,643 - INFO - Predicted : I I I the the the the the the the the the the the the the the the the 
+2018-01-30 16:53:25,643 - INFO - -----------------------------------------------
+2018-01-30 16:53:25,643 - INFO - Real : You have requested a debate on this subject in the course of the next few days, during this part-session. 
+2018-01-30 16:53:25,643 - INFO - ===============================================
+2018-01-30 16:53:25,643 - INFO - Predicted : I I I the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the the 
+2018-01-30 16:53:25,643 - INFO - -----------------------------------------------
+2018-01-30 16:53:25,644 - INFO - Real : In the meantime, I should like to observe a minute' s silence, as a number of Members have requested, on behalf of all the victims concerned, particularly those of the terrible storms, in the various countries of the European Union. 
+2018-01-30 16:53:25,644 - INFO - ===============================================
+2018-01-30 16:53:25,644 - INFO - Evaluating model ...
+2018-01-30 16:59:47,211 - INFO - Epoch : 2 Minibatch : 0 : BLEU : 0.00000 
+2018-01-30 16:59:47,211 - INFO - Saving model ...
+2018-01-30 17:00:14,290 - INFO - every epoch calculate bleu......

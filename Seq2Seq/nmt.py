@@ -11,6 +11,7 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import codecs
 import torch.nn.functional as F
 from torch.autograd import Variable
 
@@ -33,7 +34,8 @@ load_dir = config['data']['load_dir']  # 模型保存路径
 log_file_name = 'log/%s' % experiment_name
 with open(log_file_name, 'w') as f:
     pass
-os.makedirs(save_dir)
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
 
 logging.basicConfig(
     level=logging.INFO,

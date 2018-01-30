@@ -150,7 +150,20 @@ def evaluate_model(
     trg_test, config, src_valid=None, trg_valid=None,
     verbose=True, metric='bleu', use_cuda=False
 ):
-    """Evaluate model."""
+    """Evaluate model.
+    :param model: the model object
+    :param src:
+    :param src_test:
+    :param trg:
+    :param trg_test:
+    :param config: the config object
+    :param src_valid:
+    :param trg_valid:
+    :param verbose:
+    :param metric:
+    :param use_cuda:
+    :return:
+    """
     preds = []
     ground_truths = []
     for j in range(0, len(src_test['data']), config['data']['batch_size']):
@@ -226,7 +239,9 @@ def evaluate_model(
             if verbose:
                 print('--------------------------------------')
             ground_truths.append(['<s>'] + sentence_real[:index + 1])
-    print("clculate blue value.....")
+    print("call the get_bleu method to calc bleu score.....")
+    print("preds: ", preds[0])
+    print("ground_truths: ", ground_truths[0])
     return get_bleu(preds, ground_truths)
 
 
@@ -302,5 +317,4 @@ def evaluate_autoencode_model(
             if verbose:
                 print('--------------------------------------')
             ground_truths.append(sentence_real[:index + 1])
-
     return get_bleu(preds, ground_truths)
