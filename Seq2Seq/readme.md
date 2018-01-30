@@ -10,3 +10,10 @@ This project is the replication of paper 《Sequence to Sequence Learning with N
 - data_utils.py          data operate file
 - evaluate.py             evaluate models
 
+The main idea of the model can be figured as below:
+![Sequence to Sequence](images/Seq2Seq.png)
+
+TODO: use better machine to train the model
+
+
+
