@@ -34,6 +34,7 @@ def bleu_stats(hypothesis, reference):
 def bleu(stats):
     """Compute BLEU given n-gram statistics."""
     if len(list(filter(lambda x: x == 0,  stats))) > 0:
+        print("case bleu zero.")
         return 0
     (c, r) = stats[:2]
     log_bleu_prec = sum(
@@ -168,13 +169,13 @@ def evaluate_model(
     ground_truths = []
     for j in range(0, len(src_test['data']), config['data']['batch_size']):
         # Get source minibatch
-        input_lines_src, output_lines_src, lens_src, mask_src = get_minibatch(
+        input_lines_src, output_lines_src, lens_src, _ = get_minibatch(
             src_test['data'], src['word2id'], j, config['data']['batch_size'],
             config['data']['max_src_length'], add_start=True, add_end=True,
             use_cuda=use_cuda)
 
         # Get target minibatch
-        input_lines_trg_gold, output_lines_trg_gold, lens_src, mask_src = (
+        input_lines_trg_gold, output_lines_trg_gold, lens_src, _ = (
             get_minibatch(
                 trg_test['data'], trg['word2id'], j,
                 config['data']['batch_size'], config['data']['max_trg_length'],
@@ -199,6 +200,12 @@ def evaluate_model(
             input_lines_trg, output_lines_trg_gold,
             use_cuda=use_cuda
         )
+        # save gpu memory(in vain)
+        input_lines_src = input_lines_src.data.cpu().numpy()
+        del input_lines_src
+        output_lines_src = output_lines_src.data.cpu().numpy()
+        input_lines_trg_gold = input_lines_trg_gold.data.cpu().numpy()
+        del input_lines_trg_gold
 
         # Copy minibatch outputs to cpu and convert ids to words
         input_lines_trg = input_lines_trg.data.cpu().numpy()
@@ -213,32 +220,32 @@ def evaluate_model(
             [trg['id2word'][x] for x in line]
             for line in output_lines_trg_gold
         ]
-
+        print("input_lines_trg: ", input_lines_trg[0])
+        print("the length  of a sent", len(input_lines_trg[0]))
         # Process outputs
         for sentence_pred, sentence_real, sentence_real_src in zip(
             input_lines_trg,
             output_lines_trg_gold,
             output_lines_src
         ):
-            # 构造完整的句子 <s> + sentence + </s>
+            # 去除开始和结束符， 构造完整的句子sentence, 以便计算bleu值
+            if '<s>' in sentence_pred:
+                index = sentence_pred.index('<s>')
+                sentence_pred = sentence_pred[index+1:]
             if '</s>' in sentence_pred:
                 index = sentence_pred.index('</s>')
-            else:
-                index = len(sentence_pred)
-            preds.append(['<s>'] + sentence_pred[:index + 1])
+                sentence_pred = sentence_pred[:index]
+            preds.append(sentence_pred)
 
-            if verbose:
-                print(' '.join(['<s>'] + sentence_pred[:index + 1]))
-
+            if '<s>' in sentence_real:
+                index = sentence_real.index('<s>')
+                sentence_real = sentence_real[index+1:]
             if '</s>' in sentence_real:
                 index = sentence_real.index('</s>')
-            else:
-                index = len(sentence_real)
-            if verbose:
-                print(' '.join(['<s>'] + sentence_real[:index + 1]))
-            if verbose:
-                print('--------------------------------------')
-            ground_truths.append(['<s>'] + sentence_real[:index + 1])
+                sentence_real = sentence_real[: index]
+            ground_truths.append(sentence_real)
+
+            del output_lines_src, output_lines_trg_gold
     print("call the get_bleu method to calc bleu score.....")
     print("preds: ", preds[0])
     print("ground_truths: ", ground_truths[0])

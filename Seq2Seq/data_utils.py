@@ -112,7 +112,7 @@ def read_nmt_data(src, config, trg=None):
         for ind, line in enumerate(f):
             src_lines.append(line.strip().split())
             # 控制读取的数据量
-            if ind > 200:
+            if ind > 1000:
                 break
 
     print('Constructing source vocabulary ...')
@@ -130,7 +130,7 @@ def read_nmt_data(src, config, trg=None):
             for ind, line in enumerate(f):
                 trg_lines.append(line.strip().split())
                 # 控制读取的数据量
-                if ind > 200:
+                if ind > 1000:
                     break
 
         print('Constructing target vocabulary ...')
@@ -223,11 +223,11 @@ def get_minibatch(lines, word2ind, index, batch_size,
     if use_cuda:
         input_lines = Variable(torch.LongTensor(input_lines)).cuda()
         output_lines = Variable(torch.LongTensor(output_lines)).cuda()
-        mask = Variable(torch.FloatTensor(mask)).cuda()
+        # mask = Variable(torch.FloatTensor(mask)).cuda()
     else:
         input_lines = Variable(torch.LongTensor(input_lines))
         output_lines = Variable(torch.LongTensor(output_lines))
-        mask = Variable(torch.FloatTensor(mask))
+        # mask = Variable(torch.FloatTensor(mask))
     return input_lines, output_lines, lens, mask
 
 

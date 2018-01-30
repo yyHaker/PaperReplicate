@@ -170,6 +170,12 @@ for i in range(1000):
         loss.backward()
         optimizer.step()
 
+        # save gpu memory(in vain)
+        input_lines_src.data.cpu()
+        input_lines_trg.data.cpu()
+        del input_lines_src
+        del input_lines_trg
+
         # every 'monitor_loss' step to monitor
         if j % config['management']['monitor_loss'] == 0:
             logging.info('Epoch : %d Minibatch : %d Loss : %.5f' % (
