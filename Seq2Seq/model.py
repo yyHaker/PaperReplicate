@@ -108,7 +108,7 @@ class Seq2Seq(nn.Module):
 
     def get_state(self, input):
         """Get Encoder cell states and hidden states.
-        :param input: If batch_first, then [seq_len, batch]
+        :param input: If batch_first, then [batch, seq_len]
         :return: （h0, c0）(num_layers * num_directions, batch, hidden_size)
         """
         batch_size = input.size(0) if self.encoder.batch_first else input.size(1)
@@ -201,7 +201,8 @@ class Seq2Seq(nn.Module):
         """
         Return probability distribution over words.
         :param logits: [batch, trg_seq_len, trg_vocab_size] or [*, trg_vocab_size]
-        :return: 'word_probs' [batch, trg_seq_len, trg_vocab_size] or [*, trg_vocab_size]
+        :return: 'word_probs' [batch, trg_seq_len, trg_vocab_size] or [*, trg_vocab_size],
+            can be used to calculate loss
         """
         logits_reshape = logits.view(-1, self.trg_vocab_size)
         word_probs = F.softmax(logits_reshape)
@@ -209,8 +210,6 @@ class Seq2Seq(nn.Module):
             logits.size()[0], logits.size()[1], logits.size()[2]
         )
         return word_probs
-
-# TODO: check the method of blue score calculating
 
 
 

@@ -32,8 +32,10 @@ class BeamSearchDecoder(object):
 
         self.src = src
         self.trg = trg
-        self.src_dict = src['word2id']
-        self.tgt_dict = trg['word2id']
+        self.src_dict = src['word2id']  # 单词字典
+        self.tgt_dict = trg['word2id']  # 单词字典
+
+        # load the model
         self._load_model()
 
     def _load_model(self):
@@ -65,9 +67,14 @@ class BeamSearchDecoder(object):
         )
 
     def get_hidden_representation(self, input):
-        """Get hidden representation for a sentence."""
+        """Get hidden representation for a sentence.
+        :param input: If batch_first, then [batch, seq_len]
+        :return:
+          'src_h, (h_t, c_t)': get the encoder hidden state which can be
+         used by decoder
+        """
         src_emb = self.model.src_embedding(input)
-        h0_encoder, c0_encoder = self.model.get_state(src_emb)
+        h0_encoder, c0_encoder = self.model.get_state(input)
         src_h, (src_h_t, src_c_t) = self.model.encoder(
             src_emb, (h0_encoder, c0_encoder)
         )
@@ -82,7 +89,10 @@ class BeamSearchDecoder(object):
         return src_h, (h_t, c_t)
 
     def get_init_state_decoder(self, input):
-        """Get init state for decoder."""
+        """Get init state for decoder.
+        :param input: 'h_t' , the last hidden state of encoder
+        :return:
+        """
         decoder_init_state = nn.Tanh()(self.model.encoder2decoder(input))
         return decoder_init_state
 
@@ -102,19 +112,19 @@ class BeamSearchDecoder(object):
 
         beam_size = self.beam_size
 
-        #  (1) run the encoder on the src
-
+        #  (1) run the encoder on the src, get hidden state
         context_h, (context_h_t, context_c_t) = self.get_hidden_representation(
             input_lines_src
         )
 
+        # -> [seq_len_src, batch, self.src_hidden_dim * num_directions]
         context_h = context_h.transpose(0, 1)  # Make things sequence first.
 
         #  (3) run the decoder to generate sentences, using beam search
-
         batch_size = context_h.size(1)
 
         # Expand tensors for each beam.
+        # -> [seq_len_src, batch*beam_size, self.src_hidden_dim * num_directions]
         context = Variable(context_h.data.repeat(1, beam_size, 1))
         dec_states = [
             Variable(context_h_t.data.repeat(1, beam_size, 1)),
@@ -133,7 +143,6 @@ class BeamSearchDecoder(object):
         remaining_sents = batch_size
 
         for i in range(self.config['data']['max_trg_length']):
-
             input = torch.stack(
                 [b.get_current_state() for b in beam if not b.done]
             ).t().contiguous().view(1, -1)
