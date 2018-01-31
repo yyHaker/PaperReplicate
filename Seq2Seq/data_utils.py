@@ -112,8 +112,8 @@ def read_nmt_data(src, config, trg=None):
         for ind, line in enumerate(f):
             src_lines.append(line.strip().split())
             # 控制读取的数据量
-            if ind > 1000:
-                break
+            # if ind > 1000:
+                # break
 
     print('Constructing source vocabulary ...')
     src_word2id, src_id2word = construct_vocab(
@@ -130,8 +130,8 @@ def read_nmt_data(src, config, trg=None):
             for ind, line in enumerate(f):
                 trg_lines.append(line.strip().split())
                 # 控制读取的数据量
-                if ind > 1000:
-                    break
+                # if ind > 1000:
+                    # break
 
         print('Constructing target vocabulary ...')
         trg_word2id, trg_id2word = construct_vocab(

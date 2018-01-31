@@ -3,7 +3,7 @@
 import sys
 from data_utils import read_nmt_data, get_minibatch, read_config, hyperparam_string
 from model import Seq2Seq
-from evaluate import evaluate_model
+from evaluate import evaluate_model_beam_search
 import numpy as np
 import logging
 import argparse
@@ -188,6 +188,7 @@ for i in range(1000):
                 decoder_logit
             ).data.cpu().numpy().argmax(axis=-1)
             # decoder_logit: [batch*trg_seq_len, trg_vocab_size]
+            # 简单粗暴的取最大概率的那个单词
             output_lines_trg = output_lines_trg.data.cpu().numpy()
 
             logging.info("sampling several sentences...........")
@@ -209,12 +210,8 @@ for i in range(1000):
 
         if j % config['management']['checkpoint_freq'] == 0:
             logging.info('Evaluating model ...')
-            bleu = evaluate_model(
-                model, src, src_test, trg,
-                trg_test, config, verbose=False,
-                metric='bleu',
-                use_cuda=use_cuda
-            )
+            bleu = evaluate_model_beam_search(model, src, src_test, trg,
+                                      trg_test, config, beam_size=1, use_cuda=use_cuda)
 
             logging.info('Epoch : %d Minibatch : %d : BLEU : %.5f ' % (i, j, bleu))
 
@@ -230,12 +227,8 @@ for i in range(1000):
 
     # every epoch calculate bleu(cost a lot of time)
     logging.info("every epoch calculate bleu......")
-    bleu = evaluate_model(
-        model, src, src_test, trg,
-        trg_test, config, verbose=False,
-        metric='bleu',
-        use_cuda=use_cuda
-    )
+    bleu = evaluate_model_beam_search(model, src, src_test, trg,
+                                      trg_test, config, beam_size=1, use_cuda=use_cuda)
 
     logging.info('Epoch : %d : BLEU : %.5f ' % (i, bleu))
 

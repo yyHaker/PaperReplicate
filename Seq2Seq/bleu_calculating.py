@@ -2,7 +2,7 @@
 from evaluate import get_bleu
 
 preds = [list("It is a guide to action that ensures that the military will forever heed Party commands.".split())]
-groud_truths = [list("It is a guide to action which ensures that the military always obeys the commands of the party.".split())]
+groud_truths = [list("It is a guide to action which ensures that the military always <unk> the commands of the party.".split())]
 print(preds)
 print(groud_truths)
 print(get_bleu(preds, groud_truths))

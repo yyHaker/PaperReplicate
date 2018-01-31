@@ -1,75 +1,11 @@
+# -*- coding: utf-8 -*-
 """Evaluation utils."""
-import sys
-
-sys.path.append('/u/subramas/Research/nmt-pytorch')
-
 import torch
-import torch.nn.functional as F
 from torch.autograd import Variable
 from data_utils import get_minibatch, get_autoencode_minibatch
-from collections import Counter
-import math
+from decode import BeamSearchDecoder
 import numpy as np
-import subprocess
-import sys
-
-
-def bleu_stats(hypothesis, reference):
-    """Compute statistics for BLEU."""
-    stats = []
-    stats.append(len(hypothesis))
-    stats.append(len(reference))
-    for n in range(1, 5):
-        s_ngrams = Counter(
-            [tuple(hypothesis[i:i + n]) for i in range(len(hypothesis) + 1 - n)]
-        )
-        r_ngrams = Counter(
-            [tuple(reference[i:i + n]) for i in range(len(reference) + 1 - n)]
-        )
-        stats.append(max([sum((s_ngrams & r_ngrams).values()), 0]))
-        stats.append(max([len(hypothesis) + 1 - n, 0]))
-    return stats
-
-
-def bleu(stats):
-    """Compute BLEU given n-gram statistics."""
-    if len(list(filter(lambda x: x == 0,  stats))) > 0:
-        print("case bleu zero.")
-        return 0
-    (c, r) = stats[:2]
-    log_bleu_prec = sum(
-        [math.log(float(x) / y) for x, y in zip(stats[2::2], stats[3::2])]
-    ) / 4.
-    return math.exp(min([0, 1 - float(r) / c]) + log_bleu_prec)
-
-
-def get_bleu(hypotheses, reference):
-    """Get validation BLEU score for dev set."""
-    stats = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
-    for hyp, ref in zip(hypotheses, reference):
-        stats += np.array(bleu_stats(hyp, ref))
-    return 100 * bleu(stats)
-
-
-def get_bleu_moses(hypotheses, reference):
-    """Get BLEU score with moses bleu score."""
-    with open('tmp_hypotheses.txt', 'w') as f:
-        for hypothesis in hypotheses:
-            f.write(' '.join(hypothesis) + '\n')
-
-    with open('tmp_reference.txt', 'w') as f:
-        for ref in reference:
-            f.write(' '.join(ref) + '\n')
-
-    hypothesis_pipe = '\n'.join([' '.join(hyp) for hyp in hypotheses])
-    pipe = subprocess.Popen(
-        ["perl", 'multi-bleu.perl', '-lc', 'tmp_reference.txt'],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE
-    )
-    pipe.stdin.write(hypothesis_pipe)
-    pipe.stdin.close()
-    return pipe.stdout.read()
+from bleu import get_bleu
 
 
 def decode_minibatch(
@@ -245,7 +181,6 @@ def evaluate_model(
                 sentence_real = sentence_real[: index]
             ground_truths.append(sentence_real)
 
-            del output_lines_src, output_lines_trg_gold
     print("call the get_bleu method to calc bleu score.....")
     print("preds: ", preds[0])
     print("ground_truths: ", ground_truths[0])
@@ -325,3 +260,30 @@ def evaluate_autoencode_model(
                 print('--------------------------------------')
             ground_truths.append(sentence_real[:index + 1])
     return get_bleu(preds, ground_truths)
+
+
+def evaluate_model_beam_search(model, src, src_test, trg,
+    trg_test, config, beam_size=1, use_cuda=False):
+    """
+    evaluate the model use beam search.
+    :param model:
+    :param src:
+    :param src_test:
+    :param trg:
+    :param trg_test:
+    :param config:
+    :param beam_size:
+    :param use_cuda:
+    :return:
+    """
+    # the test word dict use src's dict
+    src_test['word2id'] = src['word2id']
+    src_test['id2word'] = src['id2word']
+
+    trg_test['word2id'] = trg['word2id']
+    trg_test['id2word'] = trg['id2word']
+
+    decoder = BeamSearchDecoder(config, model.state_dict(),
+                                src_test, trg_test, beam_size=beam_size, use_cuda=use_cuda)
+    bleu_score = decoder.translate()
+    return bleu_score

@@ -14,9 +14,11 @@ The main idea of the model can be figured as below:
 ![Sequence to Sequence](images/Seq2Seq.png)
 
 ### problems
-1. TODO: use better machine to train the model
+1. TODO: use beam search to test the model
+2. TODO: use better machine to train the model
 
-###Related resources
+
+### Related resources
 [1] 机器翻译自动评估-BLEU算法详解: http://blog.csdn.net/qq_31584157/article/details/77709454
 
 
