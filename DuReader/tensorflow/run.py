@@ -18,11 +18,14 @@
 This module prepares and runs the whole system.
 """
 import sys
+# test the current python version
 if sys.version[0] == '2':
     reload(sys)
     sys.setdefaultencoding("utf-8")
+# 将上级目录下的模块路径添加到程序中
 sys.path.append('..')
 import os
+# 设置系统的环境变量
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import pickle
 import argparse
@@ -45,6 +48,7 @@ def parse_args():
                         help='evaluate the model on dev set')
     parser.add_argument('--predict', action='store_true',
                         help='predict the answers for test set with trained model')
+
     parser.add_argument('--gpu', type=str, default='0',
                         help='specify gpu device')
 
@@ -80,13 +84,13 @@ def parse_args():
 
     path_settings = parser.add_argument_group('path settings')
     path_settings.add_argument('--train_files', nargs='+',
-                               default=['../data/demo/trainset/search.train.json'],
+                               default=['../data/preprocessedv0.2/trainset/search.train.json'],
                                help='list of files that contain the preprocessed train data')
     path_settings.add_argument('--dev_files', nargs='+',
-                               default=['../data/demo/devset/search.dev.json'],
+                               default=['../data/preprocessedv0.2/devset/search.dev.json'],
                                help='list of files that contain the preprocessed dev data')
     path_settings.add_argument('--test_files', nargs='+',
-                               default=['../data/demo/testset/search.test.json'],
+                               default=['../data/preprocessedv0.2/testset/search.test.json'],
                                help='list of files that contain the preprocessed test data')
     path_settings.add_argument('--brc_dir', default='../data/baidu',
                                help='the dir with preprocessed baidu reading comprehension data')

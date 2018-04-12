@@ -27,6 +27,7 @@ import codecs
 from itertools import chain
 
 
+
 def get_vocab(files, vocab_file):
     """
     Builds vocabulary file from field 'segmented_paragraphs'
@@ -38,7 +39,7 @@ def get_vocab(files, vocab_file):
     """
     vocab = {}
     for f in files:
-        with open(f, 'r') as fin:
+        with open(f, 'r', encoding="utf-8") as fin:
             for line in fin:
                 obj = json.loads(line.strip())
                 paras = [
@@ -68,4 +69,6 @@ if __name__ == '__main__':
             help='file to store counted vocab.')
     args = parser.parse_args()
     get_vocab(args.files, args.vocab)
+
+
 

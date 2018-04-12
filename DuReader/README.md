@@ -7,7 +7,7 @@ DuReader is a new large-scale real-world and human sourced MRC dataset in Chines
  - Rich annotation
 
 # DuReader Baseline Systems
-DuReader system implements 2 classic reading comprehension models([BiDAF](https://arxiv.org/abs/1611.01603) and [Match-LSTM](https://arxiv.org/abs/1608.07905)) on [DuReader dataset](https://ai.baidu.com//broad/subordinate?dataset=dureader). The system is implemented with 2 frameworks: [PaddlePaddle](http://paddlepaddle.org) and [TensorFlow](https://www.tensorflow.org).
+DuReader system implements 2 classic reading comprehension models([BiDAF](https://arxiv.org/abs/1611.01603) and [Match-LSTM](https://arxiv.org/abs/1608.07905)) on [DuReader dataset](https://ai.baidu.com//broad/subordinate?dataset=dureader). The system is implemented with [TensorFlow](https://www.tensorflow.org).
 
 ## How to Run
 ### Download the Dataset
@@ -37,6 +37,11 @@ The preprocessed data can be automatically downloaded by `data/download.sh`, and
 Once the preprocessed data is ready, you can run `utils/get_vocab.py` to generate the vocabulary file, for example, if you want to train model with Baidu Search data:
 ```
 python utils/get_vocab.py --files data/preprocessed/trainset/search.train.json data/preprocessed/devset/search.dev.json  --vocab data/vocab.search
+```
+
+you can also use the processedv0.2, you can run `utils/get_vocab.py` to generate the vocabulary file, for example, if you want to train model with Baidu Search data:
+```
+python utils/get_vocab.py --files data/preprocessedv0.2/trainset/search.train.json data/preprocessedv0.2/devset/search.dev.json  --vocab data/vocab.search
 ```
 
 If you want to use the demo data, run:
