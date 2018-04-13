@@ -156,7 +156,7 @@ def train(args):
     logger.info('Converting text into ids...')
     brc_data.convert_to_ids(vocab)
     logger.info('Initialize the model...')
-    rc_model = RCModel(vocab, args)
+    rc_model = RCModel(vocab, args)   # core models
     logger.info('Training the model...')
     rc_model.train(brc_data, args.epochs, args.batch_size, save_dir=args.model_dir,
                    save_prefix=args.algo,

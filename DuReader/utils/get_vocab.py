@@ -27,7 +27,6 @@ import codecs
 from itertools import chain
 
 
-
 def get_vocab(files, vocab_file):
     """
     Builds vocabulary file from field 'segmented_paragraphs'
