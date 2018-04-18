@@ -1,11 +1,13 @@
 # coding:utf8
-
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 from functools import reduce
 import math
 import json
 from collections import defaultdict
 import sys
-import common
+from utils.evaluation_metric import common
 # test the current python version
 if sys.version[0] == '2':
     reload(sys)
@@ -58,6 +60,7 @@ class BLEU(object):
         for n in range(self.n_size):
             bleu_list[n] = bleu_list[n] * bp
         return bleu_list
+
 
 class BLEUWithBonus(BLEU):
     def __init__(self, n_size, alpha=1.0, beta=1.0):
