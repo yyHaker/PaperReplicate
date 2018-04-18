@@ -41,6 +41,11 @@ def normalize(s):
 
     Returns:
         A list of normalized strings.
+
+    Example:
+        >>> s = ["我", "认为", "台湾", "是", "中国", "的", "一部分"]
+        >>> print(normalize(s))
+        ['我', '认 为', '台 湾', '是', '中 国', '的', '一 部 分']
     """
     if not s:
         return s

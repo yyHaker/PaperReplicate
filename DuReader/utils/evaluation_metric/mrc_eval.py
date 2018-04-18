@@ -10,11 +10,12 @@ import sys
 import zipfile
 
 from collections import Counter
-from bleu import BLEUWithBonus
-from rouge import RougeLWithBonus
+from utils.evaluation_metric.bleu import BLEUWithBonus
+from utils.evaluation_metric.rouge import RougeLWithBonus
 
 EMPTY = ''
 YESNO_LABELS = set(['Yes', 'No', 'Depends'])
+
 
 def normalize(s):
     """
@@ -41,7 +42,7 @@ def data_check(obj):
         Raises AssertionError when data is not legal.
     """
     assert 'question_id' in obj, "Missing 'question_id' field."
-    #assert 'yesno_answers' in obj, \
+    # assert 'yesno_answers' in obj, \
     #        "Missing 'yesno_answers' field. question_id: {}".format(obj['question_id'])
     if "yesno_answers" in obj:
         assert isinstance(obj['yesno_answers'], list), \
@@ -119,8 +120,8 @@ def calc_metrics(pred_result, ref_result, bleu_eval, rouge_eval):
     Returns:
         bleu-4 and rouge-l values as a tuple of float values.
     """
-    for qid, results in ref_result.iteritems():
-        cand_result = pred_result.get(qid, {})
+    for qid, results in ref_result.items():
+        cand_result = pred_result.get(qid)
         pred_answers = cand_result.get('answers', [])
         if not pred_answers:
             pred_answers = EMPTY
@@ -157,22 +158,48 @@ def calc_metrics(pred_result, ref_result, bleu_eval, rouge_eval):
     return bleu4, rouge_l
 
 
+# todo: fix some bugs
+def calc_blue4_rouge_l(pred_result, ref_result):
+    """
+        Computes bleu-4 and rouge-l.
+        pred_result and ref_result are all a dictionary mapping question_id to the
+    result information. The result information itself is also a dictionary with has
+    several keys:
+    :param pred_result: a dict mapping question_id to the result information dict
+     which has keys 'answers', 'yesno_answers'.
+    :param ref_result: a dict mapping question_id to the result information dict
+     which has keys 'source', 'answers', 'yesno_answers', 'entity_answers', 'question_type'.
+    :return: bleu-4 and rouge-l values as a dict of float values.
+    """
+    bleu_eval = BLEUWithBonus(4, alpha=1.0, beta=1.0)
+    rouge_eval = RougeLWithBonus(alpha=1.0, beta=1.0, gamma=1.2)
+    bleu4, rouge_l = calc_metrics(pred_result, ref_result, bleu_eval, rouge_eval)
+    scores = {}
+    scores['Blue-4'] = round(bleu4*100, 6)
+    scores['Rouge-L'] = round(rouge_l*100, 6)
+    return scores
+
+
 def main(args):
     err = None
     metrics = {}
     bleu4, rouge_l = 0.0, 0.0
-    alpha = args.alpha # default 1.0
+    alpha = args.alpha  # default 1.0
     beta = args.beta   # default 1.0
     bleu_eval = BLEUWithBonus(4, alpha=alpha, beta=beta)
     rouge_eval = RougeLWithBonus(alpha=alpha, beta=beta, gamma=1.2)
     pred_result = read_file(args.pred_file)
     ref_result = read_file(args.ref_file, is_ref=True)
+    print("pred_resut keys", pred_result.keys())
+    print("ref_result keys", ref_result.keys())
+    print("pred_result sample", pred_result[184936].keys())
+    print("ref_result sample", ref_result[184936].keys())
     bleu4, rouge_l = calc_metrics(pred_result,
             ref_result,
             bleu_eval,
             rouge_eval)
     metrics = {
-            'ROUGE-L': round(rouge_l* 100, 2),
+            'ROUGE-L': round(rouge_l*100, 2),
             'BLEU-4': round(bleu4 * 100, 2),
             }
     print(json.dumps(metrics, ensure_ascii=False).encode('utf8'))
@@ -180,8 +207,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('pred_file', help='predict file')
-    parser.add_argument('ref_file', help='reference file')
+    parser.add_argument('--pred_file', default='demo_data/pred.json', help='predict file')
+    parser.add_argument('--ref_file', default='demo_data/ref.json', help='reference file')
     parser.add_argument('--alpha', type=float, default=1.0,
             help='common value of alpha')
     parser.add_argument('--beta', type=float, default=1.0,

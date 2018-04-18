@@ -6,8 +6,10 @@ import json
 import numpy as np
 from collections import defaultdict
 import sys
-reload(sys)
-sys.setdefaultencoding("utf-8")
+# test the current python version
+if sys.version[0] == '2':
+    reload(sys)
+    sys.setdefaultencoding("utf-8")
 
 
 class RougeLWithBonus(object):

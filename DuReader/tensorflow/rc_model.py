@@ -34,6 +34,8 @@ from layers.match_layer import MatchLSTMLayer
 from layers.match_layer import AttentionFlowMatchLayer
 from layers.pointer_net import PointerNetDecoder
 
+from utils.evaluation_metric.mrc_eval import calc_blue4_rouge_l
+
 
 class RCModel(object):
     """
@@ -54,19 +56,20 @@ class RCModel(object):
         self.use_dropout = args.dropout_keep_prob < 1
 
         # length limit
-        self.max_p_num = args.max_p_num
-        self.max_p_len = args.max_p_len
-        self.max_q_len = args.max_q_len
-        self.max_a_len = args.max_a_len
+        self.max_p_num = args.max_p_num  # max passage num in one sample
+        self.max_p_len = args.max_p_len   # max length of passage
+        self.max_q_len = args.max_q_len   # max length of question
+        self.max_a_len = args.max_a_len   # max length of answer
 
         # the vocab
-        self.vocab = vocab
+        self.vocab = vocab  # vocab object
 
         # session info
         sess_config = tf.ConfigProto()
         sess_config.gpu_options.allow_growth = True
         self.sess = tf.Session(config=sess_config)
 
+        # build graph
         self._build_graph()
 
         # save info
@@ -88,6 +91,7 @@ class RCModel(object):
         self._decode()
         self._compute_loss()
         self._create_train_op()
+
         self.logger.info('Time to build graph: {} s'.format(time.time() - start_t))
         param_num = sum([np.prod(self.sess.run(tf.shape(v))) for v in self.all_params])
         self.logger.info('There are {} parameters in the model'.format(param_num))
@@ -112,7 +116,7 @@ class RCModel(object):
             self.word_embeddings = tf.get_variable(
                 'word_embeddings',
                 shape=(self.vocab.size(), self.vocab.embed_dim),
-                initializer=tf.constant_initializer(self.vocab.embeddings),
+                initializer=tf.constant_initializer(self.vocab.embeddings),  # use constant value to initialize
                 trainable=True
             )
             self.p_emb = tf.nn.embedding_lookup(self.word_embeddings, self.p)
@@ -187,13 +191,14 @@ class RCModel(object):
             """
             with tf.name_scope(scope, "log_loss"):
                 labels = tf.one_hot(labels, tf.shape(probs)[1], axis=1)
-                losses = - tf.reduce_sum(labels * tf.log(probs + epsilon), 1)
+                losses = - tf.reduce_sum(labels * tf.log(probs + epsilon), axis=1)
             return losses
 
         self.start_loss = sparse_nll_loss(probs=self.start_probs, labels=self.start_label)
         self.end_loss = sparse_nll_loss(probs=self.end_probs, labels=self.end_label)
         self.all_params = tf.trainable_variables()
         self.loss = tf.reduce_mean(tf.add(self.start_loss, self.end_loss))
+        # add regularization
         if self.weight_decay > 0:
             with tf.variable_scope('l2_loss'):
                 l2_loss = tf.add_n([tf.nn.l2_loss(v) for v in self.all_params])
@@ -256,7 +261,7 @@ class RCModel(object):
             evaluate: whether to evaluate the model on test set after each epoch
         """
         pad_id = self.vocab.get_id(self.vocab.pad_token)
-        max_bleu_4 = 0
+        max_rouge_l = 0
         for epoch in range(1, epochs + 1):
             self.logger.info('Training the model for epoch {}'.format(epoch))
             train_batches = data.gen_mini_batches('train', batch_size, pad_id, shuffle=True)
@@ -271,15 +276,15 @@ class RCModel(object):
                     self.logger.info('Dev eval loss {}'.format(eval_loss))
                     self.logger.info('Dev eval result: {}'.format(bleu_rouge))
 
-                    if bleu_rouge['Bleu-4'] > max_bleu_4:
+                    if bleu_rouge['Rouge-L'] > max_rouge_l:
                         self.save(save_dir, save_prefix)
-                        max_bleu_4 = bleu_rouge['Bleu-4']
+                        max_rouge_l = bleu_rouge['Rouge-L']
                 else:
                     self.logger.warning('No dev set is loaded for evaluation in the dataset!')
             else:
                 self.save(save_dir, save_prefix + '_' + str(epoch))
 
-    def evaluate(self, eval_batches, result_dir=None, result_prefix=None, save_full_info=False):
+    def evaluate_use_old_metric(self, eval_batches, result_dir=None, result_prefix=None, save_full_info=False):
         """
         Evaluates the model performance on eval_batches and results are saved if specified
         Args:
@@ -343,7 +348,89 @@ class RCModel(object):
                 if len(ref['answers']) > 0:
                     pred_dict[question_id] = normalize(pred['answers'])
                     ref_dict[question_id] = normalize(ref['answers'])
+            # pred_answers, ref_answers are both a list of dicts, have same keys
+            # set(pred_dict.keys()) == set(ref_dict.keys())
             bleu_rouge = compute_bleu_rouge(pred_dict, ref_dict)
+        else:
+            bleu_rouge = None
+        return ave_loss, bleu_rouge
+
+    def evaluate(self, eval_batches, result_dir=None, result_prefix=None,
+                                save_full_info=False):
+        """(new metric)
+        Evaluates the model performance on eval_batches and results are saved if specified
+        Args:
+            eval_batches: iterable batch data
+            result_dir: directory to save predicted answers, answers will not be saved if None
+            result_prefix: prefix of the file for saving predicted answers,
+                           answers will not be saved if None
+            save_full_info: if True, the pred_answers will be added to raw sample and saved
+        """
+        pred_answers, ref_answers = {}, {}
+        total_loss, total_num = 0, 0
+        for b_itx, batch in enumerate(eval_batches):
+            feed_dict = {self.p: batch['passage_token_ids'],
+                         self.q: batch['question_token_ids'],
+                         self.p_length: batch['passage_length'],
+                         self.q_length: batch['question_length'],
+                         self.start_label: batch['start_id'],
+                         self.end_label: batch['end_id'],
+                         self.dropout_keep_prob: 1.0}
+            start_probs, end_probs, loss = self.sess.run([self.start_probs,
+                                                          self.end_probs, self.loss], feed_dict)
+
+            total_loss += loss * len(batch['raw_data'])
+            total_num += len(batch['raw_data'])
+
+            padded_p_len = len(batch['passage_token_ids'][0])
+            # iterate every sample
+            for sample, start_prob, end_prob in zip(batch['raw_data'], start_probs, end_probs):
+                best_answer = self.find_best_answer(sample, start_prob, end_prob, padded_p_len)
+                qid = sample['question_id']
+                assert qid not in pred_answers.keys(), \
+                    "duplicate question_id {} in pred_answers".format(qid)
+                if save_full_info:
+                    sample['pred_answers'] = [best_answer]
+                    pred_answers[qid] = sample
+                else:
+                    pred_answers[qid] = {'answers': [best_answer],
+                                         'yesno_answers': [],
+                                         }
+
+                if 'answers' in sample:
+                    assert qid not in ref_answers.keys(), "duplicate question_id {} in " \
+                                                          "ref_answers".format(qid)
+                    # source ?
+                    ref_answers[qid] = {'source': 'search',
+                                        'answers': sample['answers'],
+                                        'yesno_answers': [],
+                                        'entity_answers': [[]],
+                                        'question_type': sample['question_type']
+                                        }
+
+        # save full information (write a dict of dict to the file)
+        if result_dir is not None and result_prefix is not None:
+            result_file = os.path.join(result_dir, result_prefix + '.json')
+            with open(result_file, 'w') as fout:
+                fout.write(json.dumps(pred_answers, ensure_ascii=False) + '\n')
+
+            self.logger.info('Saving {} results to {}'.format(result_prefix, result_file))
+
+        # this average loss is invalid on test set, since we don't have true start_id and end_id
+        ave_loss = 1.0 * total_loss / total_num
+
+        # compute the bleu and rouge scores if reference answers is provided
+        # normalize 'answers' and 'entity_answers'
+        if len(ref_answers.keys()) > 0:
+            for qid in ref_answers.keys():
+                ref_answers[qid]['answers'] = normalize(ref_answers[qid]['answers'])
+                for i, e in enumerate(ref_answers[qid]['entity_answers']):
+                    ref_answers[qid]['entity_answers'][i] = normalize(e)
+                assert qid in pred_answers.keys(), "qid {} in ref_answers but not " \
+                                                   "in pred_answers".format(qid)
+                pred_answers[qid]['answers'] = normalize(pred_answers[qid]['answers'])
+
+            bleu_rouge = calc_blue4_rouge_l(pred_answers, ref_answers)
         else:
             bleu_rouge = None
         return ave_loss, bleu_rouge
